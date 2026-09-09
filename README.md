@@ -4,6 +4,8 @@
 
 EquityKey is a non-custodial benefit protocol for Coinbase Tokenized Stocks on Base. Benefit creators define ownership rules. Wallets prove eligibility from B20-aware balances and claim with an onchain receipt, while their assets remain in their wallets.
 
+**Live app:** [equitykey.vercel.app](https://equitykey.vercel.app)
+
 ## Two honest modes
 
 - **Live Mode · Base Mainnet:** read-only ownership checks against the official Coinbase Tokenized Stock contract registry.

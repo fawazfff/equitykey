@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://equitykey.vercel.app"),
   title: { default: "EquityKey | Ownership, made programmable", template: "%s | EquityKey" },
   description: "Create and claim benefits tied to official Coinbase Tokenized Stock ownership on Base without giving up custody.",
+  alternates: { canonical: "/" },
   openGraph: { title: "EquityKey | Ownership, made programmable", description: "Prove ownership. Keep custody. Unlock utility on Base.", type: "website", images: [{ url: "/opengraph-image" }] },
   twitter: { card: "summary_large_image", title: "EquityKey", description: "Ownership, made programmable.", images: ["/opengraph-image"] },
   robots: { index: true, follow: true },
