@@ -1,0 +1,180 @@
+{
+  "contractName": "MockB20",
+  "sourceName": "MockB20.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        }
+      ],
+      "name": "Transfer",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "WAD_PRECISION",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "claimDemoTokens",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "decimals",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "demoClaimed",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "multiplier",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "scaledBalanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "symbol",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "raw",
+          "type": "uint256"
+        }
+      ],
+      "name": "toScaledBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080604052670de0b6b3a76400005f553480156019575f5ffd5b50610410806100275f395ff3fe608060405234801561000f575f5ffd5b506004361061009b575f3560e01c8063498da51311610063578063498da5131461013a578063664808a81461014457806370a0823114610153578063771fec521461017257806395d89b41146101a4575f5ffd5b806304f04c991461009f57806306fdde03146100c55780631b3ed722146101055780631da24f3e1461010d578063313ce56714610120575b5f5ffd5b6100b26100ad366004610304565b6101cc565b6040519081526020015b60405180910390f35b6100f8604051806040016040528060148152602001734571756974794b65792044656d6f204170706c6560601b81525081565b6040516100bc919061031b565b6100b25f5481565b6100b261011b366004610350565b6101f3565b610128601281565b60405160ff90911681526020016100bc565b61014261021f565b005b6100b2670de0b6b3a764000081565b6100b2610161366004610350565b60016020525f908152604090205481565b610194610180366004610350565b60026020525f908152604090205460ff1681565b60405190151581526020016100bc565b6100f86040518060400160405280600981526020016864656d6f4141504c6360b81b81525081565b5f670de0b6b3a76400005f54836101e39190610391565b6101ed91906103a8565b92915050565b5f80546001600160a01b038316825260016020526040822054670de0b6b3a7640000916101e391610391565b335f9081526002602052604090205460ff16156102825760405162461bcd60e51b815260206004820152601b60248201527f44656d6f2073686172657320616c726561647920636c61696d65640000000000604482015260640160405180910390fd5b335f908152600260209081526040808320805460ff1916600190811790915590915281208054670de0b6b3a764000092906102be9084906103c7565b9091555050604051670de0b6b3a7640000815233905f907fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef9060200160405180910390a3565b5f60208284031215610314575f5ffd5b5035919050565b602081525f82518060208401528060208501604085015e5f604082850101526040601f19601f83011684010191505092915050565b5f60208284031215610360575f5ffd5b81356001600160a01b0381168114610376575f5ffd5b9392505050565b634e487b7160e01b5f52601160045260245ffd5b80820281158282048414176101ed576101ed61037d565b5f826103c257634e487b7160e01b5f52601260045260245ffd5b500490565b808201808211156101ed576101ed61037d56fea26469706673582212209fa17926f0682dfa5c82f7395debdda6f72cd9ed7dd0eef36907da5488e7995364736f6c63430008240033"
+}

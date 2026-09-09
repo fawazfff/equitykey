@@ -1,0 +1,6 @@
+# EquityKey
+EquityKey is a non-custodial benefit protocol for official Coinbase Tokenized Stocks on Base.
+Live Mode reads official Base Mainnet B20 scaled balances. Demo Mode uses clearly labeled, valueless test tokens on Base Sepolia.
+EquityKey does not trade stocks, provide investment advice, or take custody. Eligibility is enforced by smart contracts when a claim is made.
+Source: https://github.com/fawazfff/equitykey
+Official stock registry: https://www.base.org/stocks
