@@ -14,5 +14,5 @@ export const equityKeyAbi = [
   { type: "function", name: "hasClaimed", stateMutability: "view", inputs: [{ name: "benefitId", type: "uint256" }, { name: "account", type: "address" }], outputs: [{ name: "", type: "bool" }] },
 ] as const;
 
-export const DEMO_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_DEMO_TOKEN_ADDRESS as `0x${string}` | undefined;
-export const EQUITYKEY_ADDRESS = process.env.NEXT_PUBLIC_EQUITYKEY_ADDRESS as `0x${string}` | undefined;
+export const DEMO_TOKEN_ADDRESS = (process.env.NEXT_PUBLIC_DEMO_TOKEN_ADDRESS || "0xF32757dfd9714889f6Bb3db44e258337BE1D6a74") as `0x${string}`;
+export const EQUITYKEY_ADDRESS = (process.env.NEXT_PUBLIC_EQUITYKEY_ADDRESS || "0xf4842f5C493cFdB7BB69df0807B346dbeEc43800") as `0x${string}`;

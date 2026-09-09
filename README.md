@@ -32,6 +32,12 @@ Demo tokens are never presented as Coinbase-issued assets. Mainnet failures neve
 
 `MockB20.sol` exists only for Base Sepolia demonstrations.
 
+### Base Sepolia deployments
+
+- Demo B20 token: [`0xF32757dfd9714889f6Bb3db44e258337BE1D6a74`](https://sepolia.basescan.org/address/0xF32757dfd9714889f6Bb3db44e258337BE1D6a74)
+- EquityKey registry: [`0xf4842f5C493cFdB7BB69df0807B346dbeEc43800`](https://sepolia.basescan.org/address/0xf4842f5C493cFdB7BB69df0807B346dbeEc43800)
+- Default demo benefit: `#1`
+
 ## Run locally
 
 ```bash
