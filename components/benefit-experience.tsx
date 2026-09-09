@@ -6,12 +6,11 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowSquareOut, Check, CheckCircle, Copy, Flask, Key, LockKey, ShieldCheck, SpinnerGap, WarningCircle } from "@phosphor-icons/react";
 import { formatUnits } from "viem";
 import { baseSepolia } from "wagmi/chains";
-import { useAccount, useReadContract, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useSignMessage, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { AppHeader } from "@/components/app-header";
-import { useSupabaseAuth } from "@/components/supabase-auth-provider";
 import { demoTokenAbi, DEMO_TOKEN_ADDRESS, EQUITYKEY_ADDRESS, equityKeyAbi } from "@/lib/contracts";
 import type { Benefit } from "@/lib/equitykey-types";
-import { equityKeyApi } from "@/lib/supabase/client";
+import { equityKeyApi, equityKeyWalletApi } from "@/lib/supabase/client";
 import { shorten } from "@/lib/stocks";
 
 type UnlockResult = { accessType: "protected_content" | "external_link"; content: string; verifiedAt: string; receiptUrl: string | null };
@@ -22,7 +21,7 @@ export function BenefitExperience({ benefit }: { benefit: Benefit }) {
   const benefitId = BigInt(benefit.onchain_benefit_id ?? 0);
   const { address, chainId, isConnected } = useAccount();
   const { switchChainAsync } = useSwitchChain();
-  const { session, authError, signInWithWallet } = useSupabaseAuth();
+  const { signMessageAsync } = useSignMessage();
   const [action, setAction] = useState<"mint" | "claim" | null>(null);
   const [checkStarted, setCheckStarted] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
@@ -83,10 +82,6 @@ export function BenefitExperience({ benefit }: { benefit: Benefit }) {
 
   async function claimBenefit() {
     setPageError(null);
-    if (!session) {
-      const signedIn = await signInWithWallet();
-      if (!signedIn) return;
-    }
     await prepare();
     setAction("claim");
     reset();
@@ -95,13 +90,10 @@ export function BenefitExperience({ benefit }: { benefit: Benefit }) {
 
   async function unlockBenefit(hash?: string) {
     setPageError(null);
-    if (!session) {
-      const signedIn = await signInWithWallet();
-      if (!signedIn) return;
-    }
+    if (!address) return;
     setUnlocking(true);
     try {
-      const result = await equityKeyApi<UnlockResult>("/unlock", { method: "POST", body: JSON.stringify({ slug: benefit.slug, txHash: hash || undefined }) });
+      const result = await equityKeyWalletApi<UnlockResult>("/unlock", { slug: benefit.slug, txHash: hash || undefined }, address, signMessageAsync);
       setUnlock(result);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "Access could not be unlocked.");
@@ -136,7 +128,7 @@ export function BenefitExperience({ benefit }: { benefit: Benefit }) {
             </div>
           </>}
           {transactionBusy ? <div className="transaction-ribbon"><SpinnerGap className="spin" size={18} /><span><strong>{isPending ? "Confirm in your wallet" : action === "mint" ? "Getting your demo share" : "Recording your claim"}</strong><small>{isPending ? "Read the wallet request, then approve it." : "Base Sepolia is confirming the transaction."}</small></span></div> : null}
-          {(pageError || authError || writeError) ? <p className="form-error"><WarningCircle size={17} /> {pageError || authError || writeError?.message}</p> : null}
+          {(pageError || writeError) ? <p className="form-error"><WarningCircle size={17} /> {pageError || writeError?.message}</p> : null}
         </section>
       </div>
     </section>

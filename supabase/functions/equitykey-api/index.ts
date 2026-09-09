@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient, type User } from "npm:@supabase/supabase-js@2.116.0";
-import { createPublicClient, decodeEventLog, http, isAddress, parseAbi, parseUnits } from "npm:viem@2.56.3";
+import { createClient } from "npm:@supabase/supabase-js@2.116.0";
+import { createPublicClient, decodeEventLog, http, isAddress, parseAbi, parseUnits, verifyMessage } from "npm:viem@2.56.3";
 import { baseSepolia } from "npm:viem@2.56.3/chains";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -12,7 +12,6 @@ const SITE_URL = "https://equitykey.vercel.app";
 const SYSTEM_BENEFIT_ID = "11111111-1111-4111-8111-111111111111";
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HASH_RE = /^0x[0-9a-fA-F]{64}$/;
-const ADDRESS_RE = /0x[0-9a-fA-F]{40}/;
 const allowedOrigins = new Set([SITE_URL, "http://localhost:3000", "http://127.0.0.1:3000"]);
 
 const contractAbi = parseAbi([
@@ -50,25 +49,19 @@ function cleanText(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-function extractWallet(user: User) {
-  for (const identity of user.identities ?? []) {
-    const candidates = [identity.provider_id, JSON.stringify(identity.identity_data ?? {})];
-    for (const candidate of candidates) {
-      const match = candidate.match(ADDRESS_RE)?.[0];
-      if (match && isAddress(match)) return match.toLowerCase() as `0x${string}`;
-    }
-  }
-  return null;
+function walletProofMessage(action: string, wallet: string, resource: string, txHash: string, issuedAt: number) {
+  return `EquityKey wallet proof\nAction: ${action}\nWallet: ${wallet.toLowerCase()}\nResource: ${resource}\nTransaction: ${txHash || "none"}\nIssued minute: ${issuedAt}`;
 }
 
-async function requireUser(request: Request) {
-  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!token) return { error: "Sign in with your wallet first." } as const;
-  const { data, error } = await admin.auth.getUser(token);
-  if (error || !data.user) return { error: "Your wallet session has expired. Sign in again." } as const;
-  const wallet = extractWallet(data.user);
-  if (!wallet) return { error: "No verified Ethereum wallet was found in this session." } as const;
-  return { user: data.user, wallet } as const;
+async function requireWalletProof(body: Record<string, unknown>, action: string, resource: string, txHash = "") {
+  const wallet = cleanText(body.wallet, 42).toLowerCase() as `0x${string}`;
+  const signature = cleanText(body.signature, 140) as `0x${string}`;
+  const issuedAt = Number(body.issuedAt);
+  const currentMinute = Math.floor(Date.now() / 60_000);
+  if (!isAddress(wallet) || !/^0x[0-9a-fA-F]{130}$/.test(signature) || !Number.isInteger(issuedAt) || Math.abs(currentMinute - issuedAt) > 2) return { error: "Approve the fresh wallet signature to continue." } as const;
+  const valid = await verifyMessage({ address: wallet, message: walletProofMessage(action, wallet, resource, txHash, issuedAt), signature });
+  if (!valid) return { error: "This wallet signature could not be verified." } as const;
+  return { wallet } as const;
 }
 
 async function encryptionKey() {
@@ -115,8 +108,6 @@ async function findEvent(hash: `0x${string}`, eventName: "BenefitCreated" | "Ben
 }
 
 async function createBenefit(request: Request) {
-  const auth = await requireUser(request);
-  if ("error" in auth) return json(request, auth, 401);
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   if (!body) return json(request, { error: "The benefit details are missing." }, 400);
 
@@ -130,6 +121,9 @@ async function createBenefit(request: Request) {
   const minimumDisplay = Number(body.minimumDisplay);
   const oneTime = body.oneTime !== false;
   const expiresAt = typeof body.expiresAt === "string" && body.expiresAt ? body.expiresAt : null;
+
+  const auth = await requireWalletProof(body, "benefits", slug, txHash);
+  if ("error" in auth) return json(request, auth, 401);
 
   if (!SLUG_RE.test(slug) || title.length < 3 || description.length < 10 || secret.length < 3) return json(request, { error: "Complete every benefit field before publishing." }, 400);
   if (!HASH_RE.test(txHash) || !Number.isFinite(minimumDisplay) || minimumDisplay <= 0 || minimumDisplay > 1000000) return json(request, { error: "The ownership rule or transaction is invalid." }, 400);
@@ -162,7 +156,7 @@ async function createBenefit(request: Request) {
   const now = new Date().toISOString();
   const { data: benefit, error } = await admin.from("equitykey_benefits").insert({
     slug,
-    creator_user_id: auth.user.id,
+    creator_user_id: null,
     creator_wallet: auth.wallet,
     source: "user",
     title,
@@ -188,17 +182,18 @@ async function createBenefit(request: Request) {
     await admin.from("equitykey_benefits").delete().eq("id", benefit.id);
     return json(request, { error: "The benefit transaction succeeded, but its private details could not be saved. You can retry safely." }, 500);
   }
-  await admin.from("equitykey_events").insert({ benefit_id: benefit.id, user_id: auth.user.id, wallet_address: auth.wallet, event_type: "publish", tx_hash: txHash.toLowerCase() });
+  await admin.from("equitykey_events").insert({ benefit_id: benefit.id, wallet_address: auth.wallet, event_type: "publish", tx_hash: txHash.toLowerCase() });
   return json(request, { benefit, link: `${SITE_URL}/benefit/${slug}` }, 201);
 }
 
 async function unlockBenefit(request: Request) {
-  const auth = await requireUser(request);
-  if ("error" in auth) return json(request, auth, 401);
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const slug = cleanText(body?.slug, 72).toLowerCase();
   const txHash = cleanText(body?.txHash, 66) as `0x${string}`;
   if (!SLUG_RE.test(slug) || (txHash && !HASH_RE.test(txHash))) return json(request, { error: "The claim details are invalid." }, 400);
+  if (!body) return json(request, { error: "The claim details are missing." }, 400);
+  const auth = await requireWalletProof(body, "unlock", slug, txHash);
+  if ("error" in auth) return json(request, auth, 401);
 
   const { data: benefit } = await admin.from("equitykey_benefits").select("*,equitykey_benefit_rules(*)").eq("slug", slug).eq("status", "published").maybeSingle();
   if (!benefit || !benefit.onchain_benefit_id) return json(request, { error: "This benefit is not available." }, 404);
@@ -221,10 +216,8 @@ async function unlockBenefit(request: Request) {
     content = await decryptSecret(stored.ciphertext, stored.iv);
   }
 
-  const { data: existing } = await admin.from("equitykey_access_grants").select("id,claim_tx_hash").eq("benefit_id", benefit.id).eq("user_id", auth.user.id).maybeSingle();
-  const claimTxHash = txHash ? txHash.toLowerCase() : existing?.claim_tx_hash || `0x${"0".repeat(64)}`;
-  await admin.from("equitykey_access_grants").upsert({ benefit_id: benefit.id, user_id: auth.user.id, wallet_address: auth.wallet, claim_tx_hash: claimTxHash, last_verified_at: new Date().toISOString(), revoked_at: null }, { onConflict: "benefit_id,user_id" });
-  await admin.from("equitykey_events").insert({ benefit_id: benefit.id, user_id: auth.user.id, wallet_address: auth.wallet, event_type: "unlock", tx_hash: txHash ? txHash.toLowerCase() : null });
+  const { data: existing } = await admin.from("equitykey_events").select("id").eq("benefit_id", benefit.id).eq("wallet_address", auth.wallet).eq("event_type", "unlock").maybeSingle();
+  await admin.from("equitykey_events").insert({ benefit_id: benefit.id, wallet_address: auth.wallet, event_type: "unlock", tx_hash: txHash ? txHash.toLowerCase() : null });
   if (!existing) await admin.from("equitykey_benefits").update({ claim_count: benefit.claim_count + 1, updated_at: new Date().toISOString() }).eq("id", benefit.id);
   return json(request, { accessType: benefit.access_type, content, verifiedAt: new Date().toISOString(), receiptUrl: txHash ? `https://sepolia.basescan.org/tx/${txHash}` : null });
 }
@@ -245,23 +238,34 @@ async function recordEvent(request: Request) {
 }
 
 async function updateStatus(request: Request) {
-  const auth = await requireUser(request);
-  if ("error" in auth) return json(request, auth, 401);
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const slug = cleanText(body?.slug, 72).toLowerCase();
   const txHash = cleanText(body?.txHash, 66) as `0x${string}`;
   const active = body?.active === true;
   if (!SLUG_RE.test(slug) || !HASH_RE.test(txHash)) return json(request, { error: "A confirmed status transaction is required." }, 400);
-  const { data: benefit } = await admin.from("equitykey_benefits").select("*").eq("slug", slug).eq("creator_user_id", auth.user.id).maybeSingle();
+  if (!body) return json(request, { error: "The status details are missing." }, 400);
+  const auth = await requireWalletProof(body, "status", slug, txHash);
+  if ("error" in auth) return json(request, auth, 401);
+  const { data: benefit } = await admin.from("equitykey_benefits").select("*").eq("slug", slug).eq("creator_wallet", auth.wallet).maybeSingle();
   if (!benefit || !benefit.onchain_benefit_id) return json(request, { error: "Benefit not found." }, 404);
   const changed = await findEvent(txHash, "BenefitStatusChanged");
   if (!changed || Number(changed.benefitId) !== benefit.onchain_benefit_id || changed.active !== active) return json(request, { error: "The status transaction does not match this benefit." }, 400);
   const status = active ? "published" : "paused";
   await Promise.all([
     admin.from("equitykey_benefits").update({ status, updated_at: new Date().toISOString() }).eq("id", benefit.id),
-    admin.from("equitykey_events").insert({ benefit_id: benefit.id, user_id: auth.user.id, wallet_address: auth.wallet, event_type: active ? "publish" : "pause", tx_hash: txHash.toLowerCase() }),
+    admin.from("equitykey_events").insert({ benefit_id: benefit.id, wallet_address: auth.wallet, event_type: active ? "publish" : "pause", tx_hash: txHash.toLowerCase() }),
   ]);
   return json(request, { ok: true, status });
+}
+
+async function dashboard(request: Request) {
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null;
+  if (!body) return json(request, { error: "Connect your wallet first." }, 400);
+  const auth = await requireWalletProof(body, "dashboard", "dashboard");
+  if ("error" in auth) return json(request, auth, 401);
+  const { data, error } = await admin.from("equitykey_benefits").select("*,equitykey_benefit_rules(*)").eq("creator_wallet", auth.wallet).order("created_at", { ascending: false });
+  if (error) return json(request, { error: "Your benefits could not be loaded." }, 500);
+  return json(request, { benefits: data ?? [] });
 }
 
 Deno.serve(async (request) => {
@@ -273,6 +277,7 @@ Deno.serve(async (request) => {
     if (request.method === "POST" && path === "/unlock") return await unlockBenefit(request);
     if (request.method === "POST" && path === "/events") return await recordEvent(request);
     if (request.method === "POST" && path === "/status") return await updateStatus(request);
+    if (request.method === "POST" && path === "/dashboard") return await dashboard(request);
     return json(request, { error: "Route not found." }, 404);
   } catch (error) {
     console.error("equitykey-api", error instanceof Error ? error.message : "unknown error");
