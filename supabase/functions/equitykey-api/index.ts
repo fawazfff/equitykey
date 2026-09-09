@@ -268,11 +268,24 @@ async function dashboard(request: Request) {
   return json(request, { benefits: data ?? [] });
 }
 
+async function resolveSlug(request: Request) {
+  const requested = cleanText(new URL(request.url).searchParams.get("value"), 72).toLowerCase();
+  if (!SLUG_RE.test(requested)) return json(request, { error: "Use letters, numbers, and hyphens for the page name." }, 400);
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const suffix = attempt === 0 ? "" : `-${attempt + 1}`;
+    const slug = `${requested.slice(0, 72 - suffix.length)}${suffix}`;
+    const { data } = await admin.from("equitykey_benefits").select("id").eq("slug", slug).maybeSingle();
+    if (!data) return json(request, { slug, available: true });
+  }
+  return json(request, { error: "Try a more specific page name." }, 409);
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(request) });
   const path = new URL(request.url).pathname.replace(/^\/equitykey-api/, "").replace(/^\/functions\/v1\/equitykey-api/, "") || "/";
   try {
     if (request.method === "GET" && path === "/health") return json(request, { ok: true, network: "Base Sepolia", contract: CONTRACT });
+    if (request.method === "GET" && path === "/slug") return await resolveSlug(request);
     if (request.method === "POST" && path === "/benefits") return await createBenefit(request);
     if (request.method === "POST" && path === "/unlock") return await unlockBenefit(request);
     if (request.method === "POST" && path === "/events") return await recordEvent(request);

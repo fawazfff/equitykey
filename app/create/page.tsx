@@ -9,7 +9,7 @@ import { baseSepolia } from "wagmi/chains";
 import { useAccount, useSignMessage, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { AppHeader } from "@/components/app-header";
 import { DEMO_TOKEN_ADDRESS, EQUITYKEY_ADDRESS, equityKeyAbi } from "@/lib/contracts";
-import { equityKeyWalletApi } from "@/lib/supabase/client";
+import { equityKeyApi, equityKeyWalletApi } from "@/lib/supabase/client";
 
 type Draft = {
   title: string;
@@ -84,8 +84,11 @@ export default function CreateBenefitPage() {
     setSaveError(null);
     if (!valid || !address) return;
     if (chainId !== baseSepolia.id) await switchChainAsync({ chainId: baseSepolia.id });
-    const metadataUri = `${window.location.origin}/api/metadata/${slug}`;
-    const nextDraft = { title: title.trim(), slug, description: description.trim(), minimum, oneTime, accessType, secret: secret.trim(), expiresAt, metadataUri };
+    const resolution = await equityKeyApi<{ slug: string }>(`/slug?value=${encodeURIComponent(slug)}`, { method: "GET" });
+    const finalSlug = resolution.slug;
+    if (finalSlug !== slug) setSlug(finalSlug);
+    const metadataUri = `${window.location.origin}/api/metadata/${finalSlug}`;
+    const nextDraft = { title: title.trim(), slug: finalSlug, description: description.trim(), minimum, oneTime, accessType, secret: secret.trim(), expiresAt, metadataUri };
     setDraft(nextDraft);
     writeContract({
       address: EQUITYKEY_ADDRESS,
@@ -115,7 +118,7 @@ export default function CreateBenefitPage() {
 
           <section><span className="form-step">03</span><div className="form-section-title"><h2>Add what they unlock</h2><p>Protected text stays encrypted. External links can still be copied after opening.</p></div><div className="choice-row"><button type="button" className={accessType === "protected_content" ? "choice selected" : "choice"} onClick={() => setAccessType("protected_content")}><LockKey size={15} /> Protected content</button><button type="button" className={accessType === "external_link" ? "choice selected" : "choice"} onClick={() => setAccessType("external_link")}><LinkSimple size={15} /> External link</button></div><label><span>{accessType === "external_link" ? "Private HTTPS link" : "Private content"}</span><textarea value={secret} maxLength={4000} placeholder={accessType === "external_link" ? "https://..." : "Write the private message or access code..."} onChange={(event) => setSecret(event.target.value)} required /></label></section>
 
-          <div className="publish-zone"><div><ShieldCheck size={20} /><p><strong>Your wallet stays in control.</strong><span>{networkMode === "demo" ? "Publishing writes only the rule to Base Sepolia. You will approve a wallet signature after the transaction, then receive the real link." : "Mainnet is a real balance checker right now. Switch to Demo to create a free test benefit."}</span></p></div>{networkMode === "live" ? <Link className="publish-button" href="/app">Open Mainnet checker <ArrowRight size={18} /></Link> : !isConnected ? <WalletNotice /> : <motion.button whileTap={reduceMotion ? undefined : { scale: .97 }} className="publish-button" disabled={!valid || busy} type="submit">{busy ? <SpinnerGap className="spin" size={18} /> : <ArrowRight size={18} />} {walletPending ? "Confirm in wallet" : receipt.isLoading ? "Writing rule to Base" : saving ? "Sign and secure the benefit" : "Publish benefit"}</motion.button>}</div>
+          <div className="publish-zone"><div><ShieldCheck size={20} /><p><strong>Your wallet stays in control.</strong><span>{networkMode === "demo" ? "Publishing writes only the rule to Base Sepolia. You will approve a wallet signature after the transaction, then receive the real link." : "Mainnet is a real balance checker right now. Switch to Demo to create a free test benefit."}</span></p>{networkMode === "demo" ? <a className="faucet-link" href="https://faucet.zalalena.com/base" target="_blank" rel="noreferrer">Need test ETH? Open the Base Sepolia faucet <ArrowSquareOut size={14} /></a> : null}</div>{networkMode === "live" ? <Link className="publish-button" href="/app">Open Mainnet checker <ArrowRight size={18} /></Link> : !isConnected ? <WalletNotice /> : <motion.button whileTap={reduceMotion ? undefined : { scale: .97 }} className="publish-button" disabled={!valid || busy} type="submit">{busy ? <SpinnerGap className="spin" size={18} /> : <ArrowRight size={18} />} {walletPending ? "Confirm in wallet" : receipt.isLoading ? "Writing rule to Base" : saving ? "Sign and secure the benefit" : "Publish benefit"}</motion.button>}</div>
           {(writeError || saveError) ? <p className="form-error"><WarningCircle size={17} /> {saveError || writeError?.message || "The benefit could not be published."} {saveError && receipt.isSuccess ? <button type="button" onClick={() => setRetryNonce((value) => value + 1)}>Retry saving the link</button> : null}</p> : null}
         </motion.form>
 
