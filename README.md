@@ -37,6 +37,8 @@ Demo tokens are never presented as Coinbase-issued assets. Mainnet failures neve
 - Demo B20 token: [`0xF32757dfd9714889f6Bb3db44e258337BE1D6a74`](https://sepolia.basescan.org/address/0xF32757dfd9714889f6Bb3db44e258337BE1D6a74)
 - EquityKey registry: [`0xf4842f5C493cFdB7BB69df0807B346dbeEc43800`](https://sepolia.basescan.org/address/0xf4842f5C493cFdB7BB69df0807B346dbeEc43800)
 - Default demo benefit: `#1`
+- Verified demo mint: [`0x46fed9…fd4e3e`](https://sepolia.basescan.org/tx/0x46fed9c0c19c156a361a5d03ed14d4315722fd4944149c472a57f57b9afd4e3e)
+- Verified benefit claim: [`0x8d68c2…698f7e`](https://sepolia.basescan.org/tx/0x8d68c277ee68bd811d0424d750916356a069b0667e64d72a98aa539c11698f7e)
 
 ## Run locally
 
