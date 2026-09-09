@@ -6,6 +6,17 @@ EquityKey is a non-custodial benefit protocol for Coinbase Tokenized Stocks on B
 
 **Live app:** [equitykey.vercel.app](https://equitykey.vercel.app)
 
+## Working creator flow
+
+1. Connect a wallet and sign a free login message.
+2. Create a benefit and choose the minimum demo stock balance.
+3. Publish the ownership rule to Base Sepolia.
+4. Copy the generated `/benefit/[slug]` page.
+5. A visitor gets a free demo share, checks their wallet and records a claim.
+6. Only a qualifying wallet receives the encrypted content or private destination.
+
+The public page and blockchain transaction never contain the protected destination. Benefit metadata, encrypted secrets and access events are stored in Supabase with row-level security; the server verifies the onchain receipt before returning access.
+
 ## Two honest modes
 
 - **Live Mode · Base Mainnet:** read-only ownership checks against the official Coinbase Tokenized Stock contract registry.
@@ -48,7 +59,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-No private API is required for read-only Mainnet checks. Configure the two public testnet contract addresses to enable Demo Mode transactions.
+No private API is required for read-only Mainnet checks. Configure the two public testnet contract addresses to enable Demo Mode transactions. The creator platform also needs a Supabase URL and publishable key. Enable Ethereum under Supabase Authentication → Web3 Wallet to allow wallet-message sign-in.
 
 ## Contracts
 
