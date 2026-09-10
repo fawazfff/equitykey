@@ -1,12 +1,7 @@
 import { createConfig, http } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 import { injected } from "wagmi/connectors";
-import { Attribution } from "ox/erc8021";
-import { BUILDER_CODE } from "@/src/constants/builderCode";
-
-const DATA_SUFFIX = Attribution.toDataSuffix({
-  codes: [BUILDER_CODE],
-});
+import { BUILDER_CODE_DATA_SUFFIX } from "@/src/constants/builderCode";
 
 export const wagmiConfig = createConfig({
   chains: [base, baseSepolia],
@@ -15,6 +10,6 @@ export const wagmiConfig = createConfig({
     [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL || "https://mainnet.base.org"),
     [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org"),
   },
-  dataSuffix: DATA_SUFFIX,
+  dataSuffix: BUILDER_CODE_DATA_SUFFIX,
   ssr: true,
 });
