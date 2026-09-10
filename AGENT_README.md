@@ -4,17 +4,18 @@ EquityKey uses Base Builder Code `bc_5782069q` for ERC-8021 transaction attribut
 
 ## Where it is stored
 
-The code is stored in `src/constants/builderCode.ts`:
-
-```ts
-export const BUILDER_CODE = "bc_5782069q";
-```
+The Builder Code and its ERC-8021 schema 0 data suffix are stored in `src/constants/builderCode.ts`.
 
 ## How attribution is attached
 
-`lib/wagmi.ts` converts the Builder Code to an ERC-8021 data suffix with `ox/erc8021` and passes it to Wagmi's `createConfig` through `dataSuffix`.
+`lib/wagmi.ts` passes the shared ERC-8021 suffix to Wagmi's `createConfig` through `dataSuffix`.
 
-This means transactions sent through EquityKey's Wagmi transaction hooks automatically carry the Builder Code attribution.
+This means transactions sent through EquityKey's Wagmi transaction hooks automatically carry EquityKey's Builder Code attribution.
+
+The current Base Sepolia flows covered by this are:
+- creating a benefit
+- receiving a demo share
+- recording a benefit claim
 
 ## Rule
 
